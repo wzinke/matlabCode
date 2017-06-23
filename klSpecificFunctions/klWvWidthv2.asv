@@ -1,0 +1,79 @@
+function [wvWidth, success] = klWvWidthv2(wave,varargin)
+%% Get waveform width
+%
+% Set defaults
+wvTime      = ((1:length(wave))-9).*.25;
+splTimes    = ((1:.1:32).*25)-(9*25);
+minWdth     = 75;
+zeroTol     = .001;
+visualize   = 0;
+success     = 1;
+upSamp      = 1;
+
+% Decode varargin
+varStrInd = find(cellfun(@ischar,varargin));
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
+        case {'-t','time'},
+            wvTime = varargin{varStrInd(iv)+1};
+        case {'-u'},
+            upSamp = varargin{varStrInd(iv)+1};
+        case {'-v'},
+            visualize = varargin{varStrInd(iv)+1};
+    end
+end
+
+% Upsample the time and the wave by 10
+if upSamp,
+    splWave = spline(1:32,wave,1:.1:32);
+    if length(wvTime)==length(wave),
+        splTimes = spline(1:32,wvTime,1:.1:32);
+    end
+else
+    splWave = wave;
+    splTimes = wvTime;
+end
+
+% Align the wave using klAlign
+[alignWv, time] = klTroughAlign(splWave,splTimes,0);
+
+% Now, clip the wave to times > minimum width
+clpWv = alignWv(time > minWdth);
+clpTm = time(time > minWdth);
+
+% Get local extrema
+[~,imax,~,imin] = extrema(clpWv);
+
+% If the clipped wave starts positive, get first negative extreme after the
+% next positive extreme
+if clpWv(1) > 0
+    exInd = find(imin > imax(1),1);
+    if ~isempty(exInd),
+        endT = clpTm(imin(exInd));
+    else
+        endT = clpTm(end);
+        success=0;
+    end
+% Or the reverse...
+else
+    exInd = imax(find(imax > imin(1),1));
+    if ~isempty(exInd)),
+        endT = clpTm(imax(exInd));
+    else
+        endT = clpTm(end);
+        success=0;
+    end
+end
+
+wvWidth = endT;
+
+if visualize
+    figure();
+    plot(time,alignWv);
+    vline(0); vline(endT);
+    keyboard
+end
+
+
+
+

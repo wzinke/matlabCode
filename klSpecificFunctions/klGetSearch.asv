@@ -1,0 +1,118 @@
+function [myType, tuneParams, latencies] = klGetSearch(allSpikes,Task)
+
+% Set defaults
+visualize = 0;
+vWind = [50,100];
+mWind = [-50,0];
+blWind = [-150, -50];
+blDim = 2;
+blOpts = [1,2];
+
+% Decode varargin
+
+% Get just mgTask
+if ~any(ismember(Task.TaskType,{'Cap','Search'})),
+    warning('No Search trials found...');
+    return
+else
+    capTrials = ismember(Task.TaskType,{'Cap','Search'});
+    spikes = allSpikes(capTrials,:);
+    
+    tFields = fieldnames(Task);
+    goodLen = size(Task.Correct,1);
+    for iField = 1:length(tFields),
+        if size(Task.(tFields{iField}),1) == goodLen,
+            capTask.(tFields{iField}) = Task.(tFields{iField})(capTrials,:);
+        else
+            capTask.(tFields{iField}) = Task.(tFields{iField});
+        end
+    end
+end
+
+% Make SDFs
+[vSDF,vTimes] = klSpkRatev3(spikes,'-q',1);
+[mSDF,mTimes] = klSpkRatev3(spikes-repmat(capTask.SRT+capTask.GoCue,1,size(spikes,2)),'-q',1);
+blMean = nanmean(nanmean(vSDF(:,vTimes >= blWind(1) & vTimes <= blWind(2)),blOpts(~ismember(blOpts,blDim))),blDim);
+blStd = nanstd(nanmean(vSDF(:,vTimes >= blWind(1) & vTimes <= blWind(2)),blOpts(~ismember(blOpts,blDim))),[],blDim);
+
+% Get tuning curves
+% Get mean SDF in visual and movement epochs for each location
+uLocs = unique(capTask.TargetLoc(~isnan(capTask.TargetLoc)));
+for il = 1:length(uLocs),
+    vLocMean(il) = nanmean(nanmean(vSDF(capTask.Correct==1 & capTask.TargetLoc==uLocs(il),(vTimes >= vWind(1) & vTimes <= vWind(2))),1),2);
+    mLocMean(il) = nanmean(nanmean(mSDF(capTask.Correct==1 & capTask.TargetLoc==uLocs(il),(mTimes >= mWind(1) & mTimes <= mWind(2))),1),2);
+end
+% Fit the means
+vRF = uLocs(vLocMean==max(vLocMean));
+mRF = uLocs(mLocMean==max(mLocMean));
+tuneParams.vRF = 
+% Get the RF
+sortLocs = sort(uLocs);
+vLocs(1) = sortLocs(find(sortLocs >= vRF,1)); vLocs(2) = sortLocs(find(sortLocs <= vRF,1,'last'));
+mLocs(1) = sortLocs(find(sortLocs >= mRF,1)); mLocs(2) = sortLocs(find(sortLocs <= mRF,1,'last'));
+
+% Get the RF subsets
+for i = 1:length(tFields),
+    if length(capTask.(tFields{i})) == length(capTask.Correct),
+        vrfTask.(tFields{i}) = capTask.(tFields{i})(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1);
+        mrfTask.(tFields{i}) = capTask.(tFields{i})(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1);
+    end
+end
+% Get neuron "type" (vis, mov, vismov, none)
+visType = klGetTypeAlt(spikes(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1,:),vrfTask);
+movType = klGetTypeAlt(spikes(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1,:),mrfTask);
+
+isVis = any(strfind(visType{1},'vis'));
+isMov = any(strfind(movType{1},'mov'));
+if isVis && isMov,
+    myType = 'vismov';
+elseif isVis && ~isMov,
+    myType = 'vis';
+elseif ~isVis && isMov,
+    myType = 'mov';
+else
+    myType = 'none';
+end
+
+% Get latencies
+[vPoiss, poissVisMat] = klPoissLatv2d(spikes(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1,:),'-rwd',capTask.Reward(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1),'-stim',capTask.StimOnset(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1));
+[mPoiss, poissMovMat] = klPoissLatv2d(spikes(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1,:)-repmat(capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1),1,size(spikes,2)),'-rwd',capTask.Reward(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1)-capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1),'-stim',capTask.StimOnset(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1)-capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1),'-stop',capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1)-capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1),'direction','rev');
+[vSig, vRise] = klSigLat(spikes(ismember(capTask.TargetLoc,vLocs) & capTask.Correct==1,:));
+[mSig, mRise] = klSigLat(spikes(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1,:)-repmat(capTask.SRT(ismember(capTask.TargetLoc,mLocs) & capTask.Correct==1),1,size(spikes,2)),'-r',1,'base',[blMean,blStd]);
+
+% Get TST
+vTrialType = nan(size(spikes,1),1);
+mTrialType = nan(size(spikes,1),1);
+vTrialType(capTask.TargetLoc == vRF) = 1;
+mTrialType(capTask.TargetLoc == mRF) = 1;
+if isfield(capTask,'DistLoc') && isfield(capTask,'Singleton'), 
+    vTrialType(capTask.DistLoc == vRF & capTask.Singleton == 1) = 2;
+    vTrialType(capTask.DistLoc == vRF & capTask.Singleton == 0) = 3;
+    mTrialType(capTask.DistLoc == mRF & capTask.Singleton == 1) = 2;
+    mTrialType(capTask.DistLoc == mRF & capTask.Singleton == 0) = 3;
+end
+targetLat       = klGetLatencyv4(spikes,capTask,capTask.TargetLoc,'-ra',vRF,{'StimOnset','SRT'});
+vTypeLat         = klGetLatencyv4(spikes,capTask,vTrialType,'-ra',vRF,{'StimOnset','SRT'});
+mTypeLat        = klGetLatencyv4(spikes,capTask,mTrialType,'-ra',mRF,{'StimOnset','SRT'});
+
+if ismember(myType,{'vis','none'}),
+    mPoiss = nan; mSig = nan; mRise = nan;
+end
+if ismember(myType,{'mov','none'}),
+    vPoiss = nan; vSig = nan; vRise = nan;
+end
+
+% Make latency structure
+latencies.vis.sig = vSig;
+latencies.vis.rise = vRise;
+latencies.vis.poissLat = vPoiss;
+latencies.vis.percPoiss = sum(isfinite(poissVisMat(:,1)))./size(poissVisMat,1);
+latencies.vis.targLocLat = targetLat(1);
+latencies.vis.targTypeLat = vTypeLat;
+
+latencies.mov.sig = mSig;
+latencies.mov.rise = mRise;
+latencies.mov.poissLat = mPoiss;
+latencies.mov.percPoiss = sum(isfinite(poissMovMat(:,1)))./size(poissMovMat,1);
+latencies.mov.targLocLat = targetLat(2);
+latencies.mov.targTypeLat = mTypeLat;

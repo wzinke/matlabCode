@@ -1,0 +1,46 @@
+%% Plots means with filled SDs
+%  In development - will add varargin and options later
+
+function [line, shape] = pltMeanStd(xVals,means,stds,varargin)
+
+% Set defaults
+alpha = .5;
+lineWidth = 1;
+color = 'k';
+
+% Decode varargin
+varStrInd = find(cellfun(@ischar,varargin));
+for iv = 1:length(varStrInd),
+    switch varargin{varStrInd(iv)},
+        case {'color'}
+            color = varargin{varStrInd(iv)+1};
+        case {'width','linewidth'}
+            linewidth = varargin{varStrInd(iv)+1};
+        case {'alpha','facealpha'}
+            alpha = varargin{varStrInd(iv)+1};
+    end
+end
+
+if size(stds,1)
+upMeans = means+stds;
+downMeans = means-stds;
+if sum(isnan(means)) == length(means) || sum(isnan(stds)) == length(stds),
+    means(length(means):max([length(means),length(stds)])) = nan;
+    stds(length(stds):max([length(means),length(stds)])) = nan;
+end
+
+if any(isnan(upMeans)) || any(isnan(downMeans))
+    warning('NaN detected in SD values...\n\tFill may not work properly\n');
+    upMeans(isnan(stds) | isnan(means))    = [];
+    downMeans(isnan(stds) | isnan(means))  = [];
+    xVals(isnan(stds) | isnan(means))      = [];
+    means(isnan(stds) | isnan(means))      = [];
+    %keyboard;
+end
+
+xValsFill = [xVals,xVals(end:-1:1)];
+stdFill = [upMeans,downMeans(end:-1:1)];
+
+
+shape = fill(xValsFill,stdFill,color,'FaceAlpha',alpha,'edgecolor',color','edgealpha',alpha); hold on;
+line = plot(xVals,means,'color',color,'linewidth',lineWidth);

@@ -1,0 +1,83 @@
+function [outPath, outFile] = tdtRowToFile(row,varargin)
+
+% Set defaults
+file = 'klTDTBookKeeping.xlsx';
+monk = 'Darwin';
+path = 'Y:/Users/Kaleb/dataProcessed';
+fType = 'DSP';
+wave = 0;
+doLFP = 0;
+reload = 0;
+doTask = 0;
+
+% Decode varargin
+varStrInd = find(cellfun(@ischar,varargin));
+for iv = 1:length(varStrInd),
+    switch varargin{varStrInd(iv)}
+        case {'file','-f'}
+            file = varargin{varStrInd(iv)+1};
+        case {'monk','-m'}
+            monk = varargin{varStrInd(iv)+1};
+        case {'task','-t'}
+            doTask = varargin{varStrInd(iv)+1};
+        case {'ftype'}
+            fType = varargin{varStrInd(iv)+1};
+        case {'wave','-w'}
+            wave  = varargin{varStrInd(iv)+1};
+            if wave, doLFP = 0; end
+        case {'-r','reload'}
+            reload = varargin{varStrInd(iv)+1};
+        case {'-l','lfp'},
+            doLFP = varargin{varStrInd(iv)+1};
+            if doLFP, wave = 0; end
+    end
+end
+
+global excelNum excelAll
+
+if isempty(excelNum) || isempty(excelAll) || reload
+    [excelNum,~,excelAll] = xlsread(file,monk);
+end
+hRow = find(strcmp(excelAll(:,1),'Session'),1);
+sessCol = find(strcmp(excelAll(hRow,:),'Session'),1);
+chanCol = find(strcmp(excelAll(hRow,:),'Channel'),1);
+unitCol = find(strcmp(excelAll(hRow,:),'Unit'),1);
+
+sessCode = excelAll{row,sessCol};
+chanCode = sprintf('Channel%d',excelNum(row,chanCol));
+unitCode = sprintf('Unit%d',excelNum(row,unitCol));
+
+nTries = 0;
+% Try up to 20 times to get the file
+if doLFP,
+    outPath = sprintf('%s/%s/%s/',path,sessCode,chanCode);
+    while ~exist('outFile','var') && nTries < 20,
+        outFileStruct = dir(sprintf('%sLFPs.mat',outPath));
+        for ifile = 1:length(outFileStruct)
+            outFile{ifile} = outFileStruct(ifile).name;
+        end
+        nTries = nTries+1;
+    end
+elseif doTask,
+    outPath = sprintf('%s/%s/',path,sessCode);
+    while ~exist('outFile','var') && nTries < 20,
+        outFileStruct = dir(sprintf('%sBehav.mat',outPath));
+        for ifile = 1:length(outFileStruct)
+            outFile{ifile} = outFileStruct(ifile).name;
+        end
+        nTries = nTries+1;
+    end
+else
+    outPath = sprintf('%s/%s/%s/%s/',path,sessCode,chanCode,unitCode);
+    while ~exist('outFile','var') && nTries < 20,
+        outFileStruct = dir(sprintf('%sSpikes.mat',outPath));
+        for ifile = 1:length(outFileStruct)
+            outFile{ifile} = outFileStruct(ifile).name;
+        end
+        nTries = nTries+1;
+    end
+end
+
+if ~exist('outFile','var'),
+    keyboard
+end

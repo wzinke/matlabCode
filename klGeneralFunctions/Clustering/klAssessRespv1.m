@@ -1,0 +1,125 @@
+function klAssessRespv1(sdfs,normSDFs,times,respClustIDs,k,varargin)
+
+close all;
+
+doResp = 0;
+% Decode varargin
+varStrInd = find(cellfun(@ischar,varargin));
+for iv = 1:length(varStrInd),
+    switch varargin{varStrInd(iv)},
+        case {'-r'},
+            respIn = varargin{varStrInd(iv)+1};
+            doResp = 1;
+        case {'-c'},
+            colors = varargin{varStrInd(iv)+1};
+            
+    end
+end
+
+if ~exist('colors','var'),
+    colors = jet(k);
+end
+
+%% Figure 1: mean SDFs
+figure(1);
+subplot(1,2,1); hold on;
+klPlotClusts(sdfs{1},times{1},respClustIDs,k,'-x',[-300,500],'-sd',0,'-m',1,'-c',colors);
+myAx(1,:) = get(gca,'YLim');
+
+vline(0);
+subplot(1,2,2); hold on;
+klPlotClusts(sdfs{2},times{2},respClustIDs,k,'-x',[-500,300],'-sd',0,'-m',1,'-c',colors);
+vline(0);
+myAx(2,:) = get(gca,'YLim');
+
+% Now make sure they're on the same axis...
+subplot(1,2,1); set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+subplot(1,2,2); set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+
+%% Figure 2: mean normalized SDFs
+figure(2);
+subplot(1,2,1); hold on;
+klPlotClusts(normSDFs{1},times{1},respClustIDs,k,'-x',[-300,500],'-sd',0,'-m',1,'-c',colors);
+myAx(1,:) = get(gca,'YLim');
+vline(0);
+subplot(1,2,2); hold on;
+klPlotClusts(normSDFs{2},times{2},respClustIDs,k,'-x',[-500,300],'-sd',0,'-m',1,'-c',colors);
+vline(0);
+myAx(2,:) = get(gca,'YLim');
+
+subplot(1,2,1); set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+subplot(1,2,2); set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+
+
+%% Figure 101-(100+k): Line plot of respIn
+for ik = 1:k,
+    if doResp,
+        figure(100+ik);
+        plot(1:size(respIn,2),respIn(respClustIDs(:,k)==ik,:));
+        title(sprintf('RespIn: Group %d (n=%d)',ik,sum(respClustIDs(:,k)==ik)));
+    end
+    
+    figure(200+ik);
+    subplot(1,2,1);
+    plot(-200:300,normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),'color',[.3 .3 .3]);
+    hold on;
+%     plot(-200:300,nanmean(normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),1),'k','linewidth',2);
+%     plot(-200:300,nanmedian(normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),1),'color',[.8 .3 .3],'linewidth',2);
+    myAx(1,:) = get(gca,'YLim');
+
+    subplot(1,2,2);
+    plot(-300:200,normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),'color',[.3 .3 .3]);
+    hold on;
+%     plot(-300:200,nanmean(normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),1),'k','linewidth',2);
+%     plot(-300:200,nanmedian(normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),1),'color',[.8 .3 .3],'linewidth',2);
+    suptitle(sprintf('SDFs: Group %d (n=%d)',ik,sum(respClustIDs(:,k)==ik)));
+    myAx(2,:) = get(gca,'YLim');
+
+    subplot(1,2,1); 
+    plot(-200:300,normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),'color',[.3 .3 .3]);
+    hold on;
+%     plot(-200:300,nanmean(normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),1),'k','linewidth',2);
+%     plot(-200:300,nanmedian(normSDFs{1}(respClustIDs(:,k)==ik,ismember(times{1},-200:300)),1),'color',[.8 .3 .3],'linewidth',2);
+    set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+    v = vline(0); set(v,'color','k');
+    set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off');
+    
+    subplot(1,2,2); plot(-300:200,normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),'color',[.3 .3 .3]);
+    hold on;
+%     plot(-300:200,nanmean(normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),1),'k','linewidth',2);
+%     plot(-300:200,nanmedian(normSDFs{2}(respClustIDs(:,k)==ik,ismember(times{2},-300:200)),1),'color',[.8 .3 .3],'linewidth',2);
+    set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+    v = vline(0); set(v,'color','k');
+    set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','yaxisloc','right');
+    
+    
+end
+
+%% Figure 1000/1001: Plot of uncategorized responses
+if doResp,
+figure(1000);
+plot(1:size(respIn,2),respIn(isnan(respClustIDs(:,k)),:));
+title(sprintf('RespIn: Uncategorized (n=%d)',sum(isnan(respClustIDs(:,k)))));
+end
+
+figure(1001);
+if any(isnan(respClustIDs(:,k))),
+    subplot(1,2,1);
+    plot(-200:300,normSDFs{1}(isnan(respClustIDs(:,k)),ismember(times{1},-200:300)));
+    myAx(1,:) = get(gca,'YLim');
+
+    subplot(1,2,2);
+    plot(-300:200,normSDFs{2}(isnan(respClustIDs(:,k)),ismember(times{2},-300:200)));
+    suptitle(sprintf('SDFs: Uncategorized (n=%d)',sum(isnan(respClustIDs(:,k)))));
+    myAx(2,:) = get(gca,'YLim');
+
+    subplot(1,2,1); 
+    plot(-200:300,normSDFs{1}(isnan(respClustIDs(:,k)),ismember(times{1},-200:300)));
+    set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+
+    subplot(1,2,2); 
+    plot(-300:200,normSDFs{2}(isnan(respClustIDs(:,k)),ismember(times{2},-300:200)));
+    set(gca,'YLim',[min(myAx(:,1)),max(myAx(:,2))]);
+end
+
+

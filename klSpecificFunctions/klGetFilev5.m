@@ -1,0 +1,206 @@
+function [grpSDF, grpSDFTimes, grpLFP, grpLFPTimes, grpWaves, grpWvTimes, normMat, normMatLFP, grpStd] = klGetFilev5(xlRows,varargin)
+
+%% Set defaults
+monk = 'Gauss';
+groupVar = 'none';
+task = 'MG';
+clip = 1;
+blWind = -200:-100;
+vWind = -100:400;
+mWind = -400:100;
+zDim = [1,2];
+zType = 'baseline';
+doRF = 0;
+wvTimes = ((1:32)-9).*25;
+
+%% Decode varargin
+varStrInd = find(cellfun(@ischar,varargin));
+for iv = 1:length(varStrInd),
+    switch varargin{varStrInd(iv)},
+        case {'monk','-m'}
+            monk = varargin{varStrInd(iv)+1};
+        case {'task','-t'}
+            task = varargin{varStrInd(iv)+1};
+        case {'rf','-rf'}
+            doRF = varargin{varStrInd(iv)+1};
+        case {'-g','group'},
+            groupVar = varargin{varStrInd(iv)+1};
+        case {'-z'}
+            zDim = varargin{varStrInd(iv)+1};
+            if length(zDim) == 1,
+                zDirs = [1,2];
+                zDim(2) = zDim(1);
+                zDim(1) = zDirs(~ismember(zDirs,zDim));
+            end
+        case {'ztype'}
+            zType = varargin{varStrInd(iv)+1};
+    end
+end
+
+if sum(ismember(xlRows,[0,1])) == length(xlRows),
+    xlRows = find(xlRows);
+end
+
+% Set constants
+xlFile = 'klDataBookKeeping_mg.xlsx';
+
+%% Load in necessary files
+global excelNum excelAll masterSorts
+if isempty(excelNum) || isempty(excelAll)
+    [excelNum,~,excelAll] = xlsread(xlFile,monk);
+end
+% load('sortedWaves.mat');
+% load allSorts.mat
+load meanSorts.mat
+load masterSorts
+
+%% Start xl row loop
+grpWaves = cell(length(xlRows),1);
+grpWvTimes = cell(length(xlRows),1);
+grpSDF = cell(length(xlRows),2);
+grpStd = cell(length(xlRows),2);
+grpSDFTimes = cell(length(xlRows),2);
+normMat = nan(length(xlRows),2);
+grpLFP = cell(length(xlRows),2);
+grpLFPTimes = cell(length(xlRows),2);
+for ir = 1:length(xlRows),
+    allTic = tic;
+    % Load in spiketimes/Task structure for spiking data
+    [path,file] = klRowToFile(xlRows(ir),'-m',monk,'-t',task);
+    if isempty(file), continue; end;
+    load([path,file{1}]);
+    
+    % Get time of saccades
+    saccTime = Task.GoCue+Task.SRT;
+    
+    % Calculate SDF aligned on stimulus onset (default alignment)
+    [tmpSDF,tmpTimes] = klSpkRatev2(spiketimes,'-q',1);
+    
+    % Calculate baseline rate and receptive fields
+    bl = nanmean(nanmean(tmpSDF(:,ismember(tmpTimes,blWind)),zDim(1)),zDim(2));
+    [rf antirf]= getRFv2(spiketimes,Task,'-b',bl);
+    vRF = rf(1); mRF = rf(2);
+    vARF = antirf(1); mARF = antirf(2);
+    
+    % Get the appropriate trials (i.e., just for rf or for all trials)
+    if doRF,
+        vCrit = Task.TargetLoc == vRF;
+        mCrit = Task.TargetLoc == mRF;
+        vaCrit = Task.TargetLoc == vARF;
+        maCrit = Task.TargetLoc == mARF;
+    else
+        vCrit = true(size(spiketimes,1),1);
+        mCrit = true(size(spiketimes,1),1);
+    end
+    
+    % Get raw SDF and times for the appropriate trials
+    [rawVisSDF,grpSDFTimes{ir,3}] = klSpkRatev2(spiketimes(vCrit,:),'-q',1);
+    % Get SDF aligned on saccade
+    [mSDF, grpSDFTimes{ir,2}] = klSpkRatev2(spiketimes(mCrit,:)-repmat(Task.SRT(mCrit,:)+Task.GoCue(mCrit,:),1,size(spiketimes,2)),'-q',1);
+    % Cut out post-saccade spikes, then recalculate SDF again
+    if clip,
+        spiketimes(spiketimes > repmat(saccTime,1,size(spiketimes,2))) = nan;
+    end
+    [vSDF, grpSDFTimes{ir,1}] = klSpkRatev2(spiketimes(vCrit,:),'-q',1);
+    
+    % Get mean baseline firing rate for the normalization matrix "normMat"
+    normMat(ir,1) = nanmean(nanmean(vSDF(:,ismember(grpSDFTimes{ir,1},blWind)),zDim(1)),zDim(2));
+    
+    % Get the SD of baseline firing rate for normalization matrix
+    switch zType,
+        case 'baseline',
+            normMat(ir,2) = nanstd(nanmean(rawVisSDF(:,ismember(grpSDFTimes{ir,1},blWind)),zDim(1)),[],zDim(2));
+        case 'trial',
+            normMat(ir,2) = nanstd(nanmean(rawVisSDF,zDim(1)),[],zDim(2));
+    end
+    
+    % Calculate maximum activation for stimulus and saccade alignments for
+    % normalization matrix
+    normMat(ir,3) = nanmax(abs(nanmean(vSDF(:,ismember(grpSDFTimes{ir,1},vWind)),1)-normMat(ir,1)));
+    normMat(ir,4) = nanmax(abs(nanmean(mSDF(:,ismember(grpSDFTimes{ir,2},mWind)),1)-normMat(ir,1)));
+    
+    % Do any splitting by location, or in/out of RF?
+    switch groupVar
+        case 'none'
+            vTrGroup = ones(size(vSDF,1),1);
+            mTrGroup = ones(size(mSDF,1),1);
+        case {'loc'}
+            vTrGroup = Task.TargetLoc;
+            mTrGroup = Task.TargetLoc;
+        case {'targ','target','tst'}
+            vTrGroup = Task.TargetLoc == vRF;
+            mTrGroup = Task.TargetLoc == mRF;
+    end
+    
+    % Get the group-wise mean SDF (if groupVar=='none', length(uGroup = 1) and
+    % no parsing is done)
+    uGroup = unique(vTrGroup);
+    for ig = 1:length(uGroup)
+        grpSDF{ir,1}(ig,:) = nanmean(vSDF(vTrGroup == uGroup(ig),:),1);
+        grpSDF{ir,3}(ig,:) = nanmean(rawVisSDF(vTrGroup == uGroup(ig),:),1);
+        grpStd{ir,1}(ig,:) = nanstd(vSDF(vTrGroup == uGroup(ig),:),[],1)./sqrt(sum(isfinite(vSDF(vTrGroup == uGroup(ig),:)),1));
+        grpStd{ir,3}(ig,:) = nanstd(rawVisSDF(vTrGroup == uGroup(ig),:),[],1)./sqrt(sum(isfinite(rawVisSDF(vTrGroup == uGroup(ig),:)),1));
+    end
+    uGroup = unique(mTrGroup);
+    for ig = 1:length(uGroup)
+        grpSDF{ir,2}(ig,:) = nanmean(mSDF(mTrGroup == uGroup(ig),:),1);
+        grpStd{ir,2}(ig,:) = nanstd(mSDF(mTrGroup == uGroup(ig),:),[],1)./sqrt(sum(isfinite(mSDF(mTrGroup == uGroup(ig),:)),1));
+    end
+    
+    %% Here, we pull out waveforms either from masterSorts (if this channel has been sorted) or by getting an  unsorted version fresh
+    if isfield(meanSorts,monk),
+        grpWaves{ir} = masterSorts.(monk)(xlRows(ir)).wave;
+        grpWvTimes{ir} = masterSorts.(monk)(xlRows(ir)).time;
+    else
+       [path,file] = klRowToFile(xlRows(ir),'-m',monk,'-t',task,'-w',1);
+       load([path,file{1}]);
+        grpWaves{ir} = spline(1:32,nanmean(wave.waves,1),1:.1:32);
+        grpWvTimes{ir} = spline(1:32,((1:32)-9).*25,1:.1:32);
+    end
+    
+    %% Finally, get LFP
+    [path,file] = klRowToFile(xlRows(ir),'-m',monk,'-t',task,'ftype','LFP');
+    load([path,file{1}]);
+    saccTime = Task.GoCue+Task.SRT;
+    
+    % Do any splitting by location, or in/out of RF?
+    switch groupVar
+        case 'none'
+            vTrGroup = ones(size(LFP,1),1);
+            mTrGroup = ones(size(LFP,1),1);
+        case {'loc'}
+            vTrGroup = Task.TargetLoc;
+            mTrGroup = Task.TargetLoc;
+        case {'targ','target','tst'}
+            vTrGroup = Task.TargetLoc == vRF;
+            mTrGroup = Task.TargetLoc == mRF;
+    end
+    
+%     shftTic=tic;
+    [shiftLFP,grpLFPTimes{ir,2}] = klShiftMatv1(LFP,timevec,saccTime);
+%     fprintf('Shifted in %s\n',printTiming(shftTic));
+    for ig = 1:length(uGroup),
+        grpLFP{ir,1}(ig,:) = nanmean(LFP(Task.Correct==1 & vTrGroup==uGroup(ig),:),1);
+        grpLFPTimes{ir,1} = timevec;
+        
+%         [movLFP,grpLFPTimes{ir,2}] = klShiftMatv1(LFP(Task.Correct==1 & vTrGroup==uGroup(ig),:),timevec,saccTime(Task.Correct==1 & vTrGroup==uGroup(ig)));
+        grpLFP{ir,2}(ig,:) = nanmean(shiftLFP(Task.Correct==1 & vTrGroup==uGroup(ig),:),1);
+    end
+    
+    % Get mean baseline LFP for the normalization matrix "normMatLFP"
+    normMatLFP(ir,1) = nanmean(nanmean(vSDF(:,ismember(grpSDFTimes{ir,1},blWind)),zDim(1)),zDim(2));
+    
+    % Get the SD of baseline LFP for normalization matrix
+    switch zType,
+        case 'baseline',
+            normMatLFP(ir,2) = nanstd(nanmean(rawVisSDF(:,ismember(grpSDFTimes{ir,1},blWind)),zDim(1)),[],zDim(2));
+        case 'trial',
+            normMatLFP(ir,2) = nanstd(nanmean(rawVisSDF,zDim(1)),[],zDim(2));
+    end
+    
+    % Calculate maximum activation for stimulus and saccade alignments for
+    % normalization matrix
+    normMatLFP(ir,3) = nanmax(abs(nanmean(grpLFP{ir,1}(:,ismember(grpLFPTimes{ir,1},vWind)),1)-normMatLFP(ir,1)));
+    normMatLFP(ir,4) = nanmax(abs(nanmean(grpLFP{ir,2}(:,ismember(grpLFPTimes{ir,2},mWind)),1)-normMatLFP(ir,1)));
+%     fprintf('This row done in %s\n',printTiming(allTic));
+end
