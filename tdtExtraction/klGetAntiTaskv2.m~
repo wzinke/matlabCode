@@ -78,7 +78,6 @@ Task.CueType = nan(nTrs,1);
 Task.Eccentricity = nan(nTrs,1);
 Task.EndAngle = nan(nTrs,1);
 Task.EndEcc = nan(nTrs,1);
-Task.EndStimInd = nan(nTrs,1);
 Task.SetSize = nan(nTrs,1);
 Task.StimLoc = nan(nTrs,4);
 Task.StimDiff = nan(nTrs,4);
@@ -272,7 +271,7 @@ for it = 1:nTrs,
             tmpLocs(:,1) = cos(klDeg2Rad(Task.StimLoc(it,:))).*Task.Eccentricity(it);
             tmpLocs(:,2) = sin(klDeg2Rad(Task.StimLoc(it,:))).*Task.Eccentricity(it);
             stmDist = klEucDist([mnX,mnY],tmpLocs);
-            Task.EndStimInd(it) = find(stmDist == min(stmDist),1);
+            
             Task.EndEcc(it)   = sqrt(mnY^2 + mnX^2);
             baseAngle = klRad2Deg(atan(abs(mnY)/abs(mnX)));
             if (mnX > 0) && (mnY > 0),
@@ -288,7 +287,7 @@ for it = 1:nTrs,
 %             if mnX < 0,
 %                 Task.EndAngle(it) = mod(Task.EndAngle(it)+180,360);
 %             end
-            tmpLocs = []; stmDist = [];
+            tmpLocs = [];
         end
             
 %     catch

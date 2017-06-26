@@ -1,0 +1,4 @@
+function success = klSendFile2Accre(fileDir)
+
+% Check to see if the file is a directory (if so, we'll do it either via
+% tar or 
