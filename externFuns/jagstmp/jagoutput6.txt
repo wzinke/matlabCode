@@ -1,0 +1,17 @@
+Welcome to JAGS 4.2.0 on Tue Aug  8 15:54:49 2017
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+Loading module: dic: ok
+Reading data file jagsdata.R
+Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 1
+   Unobserved stochastic nodes: 1
+   Total graph size: 5
+Reading parameter file jagsinit6.R
+Initializing model
+Updating 1000
+Updating 5000

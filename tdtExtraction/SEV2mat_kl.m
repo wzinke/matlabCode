@@ -203,7 +203,7 @@ for ev = 1:numel(eventNames)
     
     % preallocate data array
     if CHANNEL > 0
-        matching_ch = find([file_list_temp.chan] == CHANNEL);
+        matching_ch = find([file_list_temp.chan] == CHANNEL(1));
     else
         matching_ch = find([file_list_temp.chan] == 1);
     end
@@ -221,7 +221,7 @@ for ev = 1:numel(eventNames)
     
     % now allocate it
     if CHANNEL > 0
-        data.(file_list_temp(1).varName).data(1, total_samples) = func(0);
+        data.(file_list_temp(1).varName).data(length(CHANNEL), total_samples) = func(0);
         loop = CHANNEL;
     else
         data.(file_list_temp(1).varName).data(max_chan, total_samples) = func(0);

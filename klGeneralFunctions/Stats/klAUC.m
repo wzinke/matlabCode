@@ -8,8 +8,8 @@ type = 'trap';
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
-for iv = 1:length(varStrInd),
-    switch varargin{varStrInd(iv)},
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
         case 'x'
             xBins = varargin{varStrInd(iv)+1};
         case {'-t','type'}
@@ -18,7 +18,7 @@ for iv = 1:length(varStrInd),
 end
 
 % Make length(data) run in dimension 2
-if size(data,2) ~= length(xBins),
+if size(data,2) ~= length(xBins)
     data = data';
 end
 

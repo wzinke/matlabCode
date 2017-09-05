@@ -19,8 +19,8 @@ alph        = .05;
 
 % Decode varargin here?
 varStrInd = find(cellfun('isclass',varargin,'char'));
-for iv = 1:length(varStrInd),
-    switch varargin{varStrInd(iv)},
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
         case 'boot'
             bootSig = varargin{varStrInd(iv)+1};
     end
@@ -28,7 +28,7 @@ end
 
 res = (allMax-allMin+2)/nSamps;
 
-if visualize,
+if visualize
     % Start off visualizing the distributions of these two conditions
     binStep = (allMax-allMin)/100;
     bins = allMin:binStep:allMax;
@@ -43,7 +43,7 @@ end
 condA(isnan(condA)) = [];
 condB(isnan(condB)) = [];
 
-if isempty(condA) || isempty(condB),
+if isempty(condA) || isempty(condB)
     auc = nan;
     roc = nan(2,nSamps);
     bootP = nan;
@@ -61,7 +61,7 @@ sortB = sort(condB,'ascend');
 % also fall below that value. (I think??)
 % We can implement this by sweeping from floor(allMin)-1 to ceil(allMax)+1?
 rocRange = (allMin-1):res:(allMax+1-res);
-for ir = 1:length(rocRange),
+for ir = 1:length(rocRange)
     percA(ir) = sum(sortA <= rocRange(ir))/length(sortA);
     percB(ir) = sum(sortB <= rocRange(ir))/length(sortB);
     if ir > 1
@@ -77,13 +77,13 @@ roc = [percA;percB];
 
 % How to determine significance? For now, we'll bootstrap confidence
 % intervals?
-if bootSig,
+if bootSig
     % Combine all samples into one vector
     allData = [condA(:);condB(:)];
     numA    = length(condA);
     numB    = length(condB);
 
-    for ib = 1:nBoot,
+    for ib = 1:nBoot
         % Randomize indices for allData vector
         testInd = randperm(length(allData));
         testA   = allData(testInd(1:numA));

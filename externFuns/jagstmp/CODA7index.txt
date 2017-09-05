@@ -1,0 +1,2 @@
+theta 1 5000
+deviance 5001 10000

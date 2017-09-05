@@ -1,0 +1,6 @@
+Welcome to JAGS 4.2.0 on Tue Aug  8 15:52:48 2017
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+Loading module: dic: ok
+Failed to open file /home/loweka/git/matlabCode/tdtExtraction/Rate_1.txt
