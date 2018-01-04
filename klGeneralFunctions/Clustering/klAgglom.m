@@ -5,6 +5,8 @@
 
 function [clusters, icd, clusMembers, linkMat] = klAgglom(obs,varargin)
 
+% Adding a commented line to test git
+
 % Set defaults
 type        = 'corr';
 combType    = 'all'; % use "mean" or "all"
