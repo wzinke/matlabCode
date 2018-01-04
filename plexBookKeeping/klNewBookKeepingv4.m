@@ -27,7 +27,7 @@ mWind       = [0 50];
 rateLim     = 100;
 visMax      = 200;
 movMin      = -200;
-alph        = .1;
+alph        = .1;b
 
 rOff = 4;
 cOff = 3;

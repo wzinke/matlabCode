@@ -72,8 +72,11 @@ MAXEVENTS = 1e6;
 MAXCHANNELS = 1024;
 
 % put the slashes in the correct direction.
-tank = strrep(tank, '/', '\');
-if tank(end) == '\'
+% tank = strrep(tank, '/', '\');
+% if tank(end) == '\'
+%     tank(end) = [];
+% end
+if tank(end)=='/'
     tank(end) = [];
 end
     

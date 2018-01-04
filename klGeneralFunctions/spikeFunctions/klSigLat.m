@@ -7,6 +7,7 @@ tstWind     = [50,150];
 consecTime  = 30;
 nStd        = 2;
 rev = 0;
+maxLat = 150;
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
@@ -62,7 +63,7 @@ else
     t2s     = sdfTimes(find(nConsec >= consecTime & sdfTimes >= 0,1));
 end
 
-if isempty(t2s), t2s = nan; end
+if isempty(t2s) || t2s > maxLat, t2s = nan; end
 if ~isnan(t2s),
     
     % Now go backwards to test correlation between mnSDF and time. This reveals

@@ -4,9 +4,9 @@ function klDendroClustChange(h,linkMat,idx,varargin)
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
-for iv = 1:length(varStrInd),
-    switch varargin{varStrInd(iv)},
-        case {'-c','color'},
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
+        case {'-c','color'}
             colors = varargin{varStrInd(iv)+1};
     end
 end
@@ -17,13 +17,13 @@ uClusts = unique(idx(~isnan(idx)));
 
 % Set up handy constants
 n = length(idx);
-if ~exist('colors','var'),
+if ~exist('colors','var')
     colors = jet(length(uClusts));
 end
 
 % Loop through clusters to get an initial accounting of the idx indices
 clustNums = cell(1,length(uClusts)+1);
-for ic = 1:length(uClusts),
+for ic = 1:length(uClusts)
     clustNums{ic} = find(idx==uClusts(ic));
 end
 clustNums{ic+1} = find(isnan(idx));
@@ -34,12 +34,12 @@ hClust = nan(1,size(linkMat,1));
 
 % Now, this may be time consuming but we'll have to loop through linkMat,
 % at least until I think of a better solution...
-for il = 1:size(linkMat,1),
+for il = 1:size(linkMat,1)
     % Figure out which cluster these observations are in
     col1 = find(cellfun(@(x) any(ismember(x,linkMat(il,1))),clustNums));
     col2 = find(cellfun(@(x) any(ismember(x,linkMat(il,2))),clustNums));
     
-    if col1 ~= col2,
+    if col1 ~= col2
         break
     end
     
@@ -49,7 +49,7 @@ end
 hClust(il:end) = length(clustNums);
 
 % Now, we'll loop back through clusters and change the colors
-for ic = 1:length(uClusts),
+for ic = 1:length(uClusts)
     set(h(hClust==uClusts(ic)),'color',colors(ic,:));
 end
 set(h(hClust==ic+1),'color','k');

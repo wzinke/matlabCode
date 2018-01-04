@@ -42,13 +42,13 @@ switch type
         % Get ISIs, convert to one long vector
         isiMat = diff(spiketimes,1,2);
         isiVect = nan(1,numel(isiMat));
-        for it = 1:size(isiMat,1),
+        for it = 1:size(isiMat,1)
             isiVect = cat(2,isiVect,isiMat(it,:));
         end
         % Initialize some vectors
         cv2 = nan(1,numel(isiVect)-1); 
         % Loop through ISI vector - 
-        for ii = 1:length(isiVect)-1,
+        for ii = 1:length(isiVect)-1
             cv2(ii) = (2*abs(isiVect(ii+1)-isiVect(ii)))/(isiVect(ii+1)+isiVect(ii));
         end
         cv = nansum(cv2)./(sum(~isnan(cv2))-1);

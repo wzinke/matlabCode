@@ -13,17 +13,17 @@ end
 steps = myIns{1};
 
 % Make 100 steps for each change in points
-bigMap = nan((size(points,1)-1)*100,3);
+bigMap = nan((size(points,1)-1)*5000,3);
 for ip = 1:(size(points,1)-1),
     range = points(ip+1,:)-points(ip,:);
-    delt = range./(100);
+    delt = range./(5000);
 
     % Get each element
     for ic = 1:size(pre,2),
         if delt(ic) == 0,
-            bigMap((((ip-1)*100)+1):(ip*100),ic) = points(ip,ic);
+            bigMap((((ip-1)*5000)+1):(ip*5000),ic) = points(ip,ic);
         else
-            bigMap((((ip-1)*100)+1):(ip*100),ic) = points(ip,ic):delt(ic):(points(ip+1,ic)-delt(ic));
+            bigMap((((ip-1)*5000)+1):(ip*5000),ic) = points(ip,ic):delt(ic):(points(ip+1,ic)-delt(ic));
         end
     end
 end

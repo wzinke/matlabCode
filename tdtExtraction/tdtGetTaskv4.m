@@ -1,13 +1,20 @@
 function [Task, trStarts, trEnds] = tdtGetTaskv4(inFile,events)
 
 %% Get the TDT structure using their TDT2mat
+
+if ispc
+    getFun = @TDT2mat;
+else
+    getFun = @TDTbin2mat;
+end
+
 % First events
-tdtEvsRaw = TDT2mat(inFile,'TYPE',{'epocs'},'VERBOSE',false);
+tdtEvsRaw = getFun(inFile,'TYPE',{'epocs'},'VERBOSE',false);
 if isfield(tdtEvsRaw.epocs,'TEVT'),
     tdtEvs = tdt2EvShft(tdtEvsRaw.epocs.TEVT.data);
     tdtEvTms = tdtEvsRaw.epocs.TEVT.onset.*1000; % Multiplication converts to ms
 elseif ~isfield(tdtEvsRaw.epocs,'EVNT'),
-    tdtEvsRaw = TDT2mat(inFile,'TYPE',{'scalars'},'VERBOSE',false);
+    tdtEvsRaw = getFun(inFile,'TYPE',{'scalars'},'VERBOSE',false);
     tdtEvs = tdt2EvShft(tdtEvsRaw.scalars.EVNT.data)';
     tdtEvTms = tdtEvsRaw.scalars.EVNT.ts'.*1000; % Multiplication converts to ms
 else
@@ -43,8 +50,12 @@ trStartInds = find(tdtEvs == events.TrialStart_);
 trStopInds  = find(tdtEvs == events.Eot_);
 trStarts = tdtEvTms(trStartInds);
 trEnds   = [tdtEvTms(trStartInds(2:end));length(tdtEvTms)];
-nTrs = length(trStartInds);
+nTrs = length(trStopInds);%length(trStartInds);
 
+%% Added recently...
+trStartInds(trStartInds > trStopInds(end)) = [];
+
+%% Back to the usual
 for it = 1:nTrs,
     
     if it < nTrs,

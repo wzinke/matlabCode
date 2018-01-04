@@ -4,14 +4,15 @@ bl = 0;
 vWind = [50,150];
 mWind = [-100,0];
 doSDF = 1;
+visualize = 0;
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
-for iv = 1:length(varStrInd),
-    switch varargin{varStrInd(iv)},
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
         case {'bl','-b'}
             bl = varargin{varStrInd(iv)+1};
-        case {'-s','sdf'},
+        case {'-s','sdf'}
             doSDF = varargin{varStrInd(iv)+1};
     end
 end
@@ -20,11 +21,11 @@ tLocs = unique(Task.TargetLoc(isfinite(Task.TargetLoc)));
 vfr = nan(1,length(tLocs));
 mfr = nan(1,length(tLocs));
 mspks = spks-repmat(Task.SRT+Task.GoCue,1,size(spks,2));
-if doSDF,
+if doSDF
     [spks,vtimes] = klSpkRatev2(spks,'-q',1);
     [mspks,mtimes] = klSpkRatev2(mspks,'-q',1);
     
-    for il = 1:length(tLocs),
+    for il = 1:length(tLocs)
         vfr(il) = abs(nanmean(nanmean(spks(Task.TargetLoc == tLocs(il),vtimes >= vWind(1) & vtimes <= vWind(2)),1),2) - bl);
         mfr(il) = abs(nanmean(nanmean(mspks(Task.TargetLoc == tLocs(il),mtimes >= mWind(1) & mtimes <= mWind(2)),1),2) - bl);
     end
@@ -39,23 +40,37 @@ rfT{2}    = tLocs(mfr ==  max(mfr));
 antirfT{1} = tLocs(vfr == min(vfr));
 antirfT{2} = tLocs(mfr == min(mfr));
 
-if ~isempty(rfT{1}),
+if ~isempty(rfT{1})
     rf(1) = rfT{1}(1);
 else
     rf(1) = nan;
 end
-if ~isempty(rfT{2}),
+if ~isempty(rfT{2})
     rf(2) = rfT{2}(1);
 else
     rf(2) = nan;
 end
-if ~isempty(antirfT{1}),
+if ~isempty(antirfT{1})
     antirf(1) = rfT{1}(1);
 else
     antirf(1) = nan;
 end
-if ~isempty(antirfT{2}),
+if ~isempty(antirfT{2})
     antirf(2) = rfT{2}(1);
 else
     antirf(2) = nan;
+end
+
+if visualize
+    close all;
+    figure(); hold on;
+    for il = 1:length(tLocs)
+        if tLocs(il) == rf(1)
+            plot(vtimes,nanmean(spks(Task.TargetLoc==tLocs(il) & Task.Correct==1,:),1),'color','r');
+        else
+            plot(vtimes,nanmean(spks(Task.TargetLoc==tLocs(il) & Task.Correct==1,:),1),'color','k');
+        end
+    end
+    set(gca,'XLim',[-50,300]);
+    keyboard
 end

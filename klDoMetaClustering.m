@@ -1,4 +1,4 @@
-function [sortIDs, idxDist, raw, respSumStruct] = klDoMetaClustering(goodSDF,allTimeCell,varargin)
+function [sortIDs, idxDist, raw, respSumStruct, rawLink] = klDoMetaClustering(goodSDF,allTimeCell,varargin)
 
 %% Set options and defaults
 % restrict = 0;
@@ -10,6 +10,7 @@ show = 0;
 unifK = 0;
 randReps = 5;
 kMax = 0;
+myEpocs = 
 
 %% Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
@@ -29,6 +30,13 @@ for iv = 1:length(varStrInd),
             unifK = varargin{varStrInd(iv)+1};
         case {'-m'},
             kMax = varargin{varStrInd(iv)+1};
+        case {'-e'}
+            myEpocs = varargin{varStrInd(iv)+1};
+        case {'-ei'}
+            myEpocInds = varargin{varStrInd(iv)+1};
+        case {'-er'}
+            myEpocWinds = varargin{varStrInd(iv)+1};
+            
     end
 end
 
@@ -62,7 +70,7 @@ if ~exist('respSumStruct','var'),
             for ir = 1:length(respRand),
                 for ii = 1:length(respInclude),
                     for iz = 1:length(zResp),
-                        clc;
+                        clc;klDoMetaClustering
                         nDone = nDone+1;
                         fprintf('Clustering combination %d of %d...\n',nDone,nNeeded);
                         [respK,respClustIDs,respGap,respGapErr,linkMat,linkInd, distMat] = klRespClustForMetaclustv2(goodSDF,allTimeCell,'norm',respNorms{in},'sim',respSims{is},'rand',respRand{ir},'resp',respInclude{ii},'z',zResp(iz),'-n',minN,'-r',randReps);
@@ -127,7 +135,7 @@ end
 
 % Cluster the new distance matrix
 raw = sumSame./length(includeParams);
-[sortIDs,idxDist,~,~] = klDistMatAgglomv2(1-raw,1:30,'-n',metaN);
+[sortIDs,idxDist,~,~,rawLink] = klDistMatAgglomv2(1-raw,1:30,'-n',metaN);
 while sum(isnan(sortIDs(:,end)))==size(sortIDs,1),
     sortIDs = sortIDs(:,1:(end-1));
 end

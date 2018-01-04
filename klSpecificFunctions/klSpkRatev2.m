@@ -70,8 +70,10 @@ if ~isempty(varargin)
                     splitByGroups = 1; groupVars = thisSpecVal;
                 case '-q'
                     quiet = thisSpecVal;
-                case 'ktype'
+                case {'-k','ktype'}
                     kType = thisSpecVal;
+                case {'-w','width'}
+                    gaussSD = thisSpecVal;
                 otherwise
                     continue;
             end
@@ -94,8 +96,10 @@ if ~isempty(varargin)
             case 'group'
                 if ~iscell(thisSpecVal), error('Grouping requires cell array of vectors'); end
                 splitByGroups = 1; groupVars = thisSpecVal;
-            case 'ktype'
+            case {'-k','ktype'}
                 kType = thisSpecVal;
+            case {'-w','width'}
+                gaussSD = thisSpecVal;
             otherwise
                 continue;
         end

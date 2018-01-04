@@ -15,7 +15,7 @@ maxSpk = max(nSpks(:));
 placedEvents = nan(nTrs,maxSpk);
 
 % Place spikes in the matrix
-for it = 1:nTrs,
+for it = 1:nTrs
     placedEvents(it,1:nSpks(it)) =  events(events >= trStarts(it) & events <= trEnds(it));
 end
 placedEvents = placedEvents-repmat(Task.AlignTimes,1,size(placedEvents,2));

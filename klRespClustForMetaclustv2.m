@@ -36,6 +36,17 @@ direction = 'first';
 dirTypes = {'first','last'};
 doGap = 1;
 
+% Default analysis epochs
+preVis = -100:0;
+visTrans = 50:100;
+visSust = 100:150;
+preMov = -50:0;
+postMov = 0:50;
+nextVis = 50:100;
+allEpocs = {preVis,visTrans,visSust,preMov,postMov,nextVis};
+
+
+
 %% Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
 for iv = 1:length(varStrInd),
@@ -67,28 +78,20 @@ end
 %% Start the analysis
 
 % Normalize/Scale the SDFs
-[normVis, normMov] = klNormResp(visAlign,visTimes,movAlign,movTimes,respNormType,'bl',blWind);
+[normResp{1}, normMov] = klNormResp(visAlign,visTimes,movAlign,movTimes,respNormType,'bl',blWind);
 
 % Cut down the responses to relevant times and to get rid of nans
-catNorms = [normVis(:,ismember(visTimes,vWind)),normMov(:,ismember(movTimes,mWind))];
+catNorms = [normResp{1}(:,ismember(visTimes,vWind)),normMov(:,ismember(movTimes,mWind))];
 goodRows = sum(isfinite(catNorms),2) == size(catNorms,2);
-normVis = normVis(goodRows,:);
+normResp{1} = normResp{1}(goodRows,:);
 normMov = normMov(goodRows,:);
 
-% Set up analysis epochs
-preVis = -100:0;
-visTrans = 50:100;
-visSust = 100:150;
-preMov = -50:0;
-postMov = 0:50;
-nextVis = 50:100;
-allEpocs = {preVis,visTrans,visSust,preMov,postMov,nextVis};
 epocSpks = {normVis,normVis,normVis,normMov,normMov,normMov};
 epocTms = {visTimes,visTimes,visTimes,movTimes,movTimes,movTimes};
 
 % Smooth the SDFs a little bit in case we want to cluster the whole SDF
 kern = klGetKern('type','gauss','width',10);
-convVis = conv2(normVis(:,ismember(visTimes,vWind)),kern,'same');
+convVis = conv2(normResp{1}(:,ismember(visTimes,vWind)),kern,'same');
 convMov = conv2(normMov(:,ismember(movTimes,mWind)),kern,'same');
 convResp = [convVis(:,1:nSkip:end),convMov(:,1:nSkip:end)];
 startInds = [1,length(1:nSkip:size(convVis,2))+1];
