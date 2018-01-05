@@ -139,13 +139,13 @@ spkWidths = [mgParams.spkWidth]';
 anovaVars = {'mgTuneWidth','mgTuneWidth','mgTuneDir','mgTuneDir','mgTuneAmp','mgTuneAmp',...
     'mgBaseline','mgCV','mgCV2','mgLV','mgLVR','mgFano','spkWidths'};
 varSubset = {'mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5',...
-    'ones(length(mgBaseline),1)','ones(length(mgCV),1)','ones(length(mgCV2),1)','ones(length(mgLV),1)','ones(length(mgLVR),1)','ones(length(mgFano),1)','ones(length(spkWidths),1)'};
-varCol = {',1',',2',',1',',2',',1',',2',[],[],[],[],[],[],[],[]};
+    ':',':',':',':',':',':',':'};
+varCol = {',1',',2',',1',',2',',1',',2',[],[],[],[],[],[]};
 clustSubset = {'mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5',...
-    'ones(length(mgBaseline),1)','ones(length(mgCV),1)','ones(length(mgCV2),1)','ones(length(mgLV),1)','ones(length(mgLVR),1)','ones(length(mgFano),1)','ones(length(spkWidths),1)'};
+    ':',':',':',':',':',':',':'};
 anovaYStr = {'Visual Tuning Width (deg.)','Movement Tuning Width (deg.)','Visual RF (deg.)','Movement Field (deg).','Visual Max (sp/s)','Movement Max (sp/s)',...
-    'Baseline FR (sp/s)','CV','CV2','LV','LVR','Fano Factor','Spike Width'};
-anovaSaveStr = {'vTuneWd','mTuneWd','vTuneDir','mTuneDir','vRF','mRF','vMax','mMax','blRate','CV','CV2','LV','LVR','Fano','spkWidth'};
+    'Baseline FR (sp/s)','CV','CV2','LV','LVR','Spike Width'};
+anovaSaveStr = {'vTuneWd','mTuneWd','vTuneDir','mTuneDir','vRF','mRF','vMax','mMax','blRate','CV','CV2','LV','LVR','spkWidth'};
 
 for iv = 1:length(anovaVars)
 %     eval(['[p(iv),t{iv},stats(iv)] = anovan(',anovaVars{iv},',mgIDs(',anovaSubset{iv},',mgK),''display'',''off'');']);
@@ -153,30 +153,30 @@ for iv = 1:length(anovaVars)
 end
 
 sigComps = find(p < pAlph);
-% for ip = 1:length(sigComps)
-%     % Make the scatter plot
-%     
-%     figure(); %hold on;
-%     eval(['scatter(mgIDs(',anovaSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},',[],''k'');']);
-%     hold on;
-%     % Find the post-hoc comparisons
-%     mcMat = multcompare(stats(sigComps(ip)),'display','off');
-%     postHocSig = find(mcMat(:,end) <= pAlph);
-%     if ~isempty(postHocSig)
-%         % Get default Y axis values
-%         currY = get(gca,'YLim');
-%         % Let's let the post-hoc indicators span 10% at the top
-%         for ii = 1:length(postHocSig)
-%             plot([mcMat(postHocSig(ii),1),mcMat(postHocSig(ii),2)],ones(1,2).*currY(2)+((.1.*ii*range(currY))/length(postHocSig)),'color','k');
-%         end
-%         set(gca,'YLim',[currY(1),currY(2)+.12*range(currY)]);
-%     end
-%     set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','XLim',[0,mgK+1]);
-%     xlabel('MG Cluster');
-%     ylabel(anovaYStr{sigComps(ip)});
-%     saveas(gcf,[saveDir,'/stats/aov-',anovaSaveStr{sigComps(ip)},'.fig']);
-%     clear mcMat
-% end
+for ip = 1:length(sigComps)
+    % Make the scatter plot
+    
+    figure(); %hold on;
+    eval(['scatter(mgIDs(',anovaSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},',[],''k'');']);
+    hold on;
+    % Find the post-hoc comparisons
+    mcMat = multcompare(stats(sigComps(ip)),'display','off');
+    postHocSig = find(mcMat(:,end) <= pAlph);
+    if ~isempty(postHocSig)
+        % Get default Y axis values
+        currY = get(gca,'YLim');
+        % Let's let the post-hoc indicators span 10% at the top
+        for ii = 1:length(postHocSig)
+            plot([mcMat(postHocSig(ii),1),mcMat(postHocSig(ii),2)],ones(1,2).*currY(2)+((.1.*ii*range(currY))/length(postHocSig)),'color','k');
+        end
+        set(gca,'YLim',[currY(1),currY(2)+.12*range(currY)]);
+    end
+    set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','XLim',[0,mgK+1]);
+    xlabel('MG Cluster');
+    ylabel(anovaYStr{sigComps(ip)});
+    saveas(gcf,[saveDir,'/stats/aov-',anovaSaveStr{sigComps(ip)},'.fig']);
+    clear mcMat
+end
 
 clear p t stats
 
@@ -189,8 +189,7 @@ clustAbbr = {'VM','M','V'};
 for is = 1:length(clustsToCheck)
     theseClusts = clustsToCheck{is};
     for iv = 1:length(anovaVars)
-        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = anovan(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''display'',''off'');']);
-%         eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''off'');']);
+        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol,')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''off'');']);
     end
 end
 
