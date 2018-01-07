@@ -1,7 +1,7 @@
 function klRecentDaDistSupp(varargin)
 clearvars; close all;
 
-tebaDir = '/mnt/teba/Users/Kaleb/dataProcessed';
+tebaDir = [tebaMount,'Users/Kaleb/dataProcessed';
 areaCrit = {'FEF'};
 blWind = -300:-100;
 tstWind = 100:150;

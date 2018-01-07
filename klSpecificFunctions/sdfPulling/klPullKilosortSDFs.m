@@ -87,7 +87,7 @@ for ir = 1:length(rowInds)
     % Find and load the appropriate .mat files for spikes and behavior
     printStr = 'Loading data...';
     fprintf(printStr);
-    load(['/mnt/teba/Users/Kaleb/dataProcessed/',all{rowInds(ir),1}(2:(strfind(all{rowInds(ir),1},'_probe')-1)),'/Behav.mat']);
+    load([[tebaMount,'Users/Kaleb/dataProcessed/',all{rowInds(ir),1}(2:(strfind(all{rowInds(ir),1},'_probe')-1)),'/Behav.mat']);
     load(sprintf('%s/%s/%s',baseDir,all{rowInds(ir),1}(2:(end-1)),all{rowInds(ir),2}(2:(end-1))),'spkTimes','waves');
     fprintf(repmat('\b',1,length(printStr)));
     

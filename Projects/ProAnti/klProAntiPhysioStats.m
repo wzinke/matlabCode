@@ -1,6 +1,6 @@
 function outCell = klProAntiPhysioStats(sessName,varargin)
 
-baseDir = '/mnt/teba/Users/Kaleb/proAntiProcessed/';
+baseDir = [tebaMount,'Users/Kaleb/proAntiProcessed/';
 doSave = 1;
 watch = 0;
 fresh = 0;

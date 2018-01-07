@@ -15,7 +15,7 @@ switch task
 end
 
 % Set data location
-baseDir = '/mnt/teba/Users/Wolf/ephys_db/';
+baseDir = [tebaMount,'Users/Wolf/ephys_db/';
 
 % Set constants
 minRate = 0;

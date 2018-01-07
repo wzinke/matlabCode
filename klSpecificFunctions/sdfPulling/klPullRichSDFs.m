@@ -32,7 +32,7 @@ end
 
 % Set some constants
 monks = {'Darwin','Euler','Quincy','Seymour'};
-tebaBase = '/mnt/teba/data';
+tebaBase = [tebaMount,'data';
 
 % Set defaults
 blWind = -300:-200;

@@ -12,9 +12,9 @@ global tebaDir sessFold recSys Task monk
 
 switch recSys
     case {'tdt'}
-        tebaDir = '/mnt/teba/Users/Kaleb/dataProcessed';
+        tebaDir = [tebaMount,'Users/Kaleb/dataProcessed';
     case {'plex'}
-        tebaDir = '/mnt/teba/Users/Wolf/ephys_db';
+        tebaDir = [tebaMount,'Users/Wolf/ephys_db';
 end
 
 sessFold = sessOld;
