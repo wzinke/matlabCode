@@ -1,6 +1,6 @@
 function extraMGClustFactors()
 
-clear all; close all;
+clearvars; close all;
 
 reload = 0;
 reClust = 1;
@@ -13,8 +13,8 @@ minN = 10;
 pAlph = .05;
 saveLoad = 1;
 doClip = 1;
-matLoc = '~/Dropbox/Schall-Lab/dataMats';
-saveDir = '~/Dropbox/Schall-Lab/Figures/fefMGtoSearchClusts';
+matLoc = [mlRoot,'Dropbox/Schall-Lab/dataMats'];
+saveDir = [mlRoot,'Dropbox/Schall-Lab/Figures/fefMGtoSearchClusts'];
 
 %% Get a list of good variables
 goodVars = whos; keepNames = {goodVars.name}; keepNames{end+1} = 'keepNames'; keepNames{end+1} = 'goodVars';
