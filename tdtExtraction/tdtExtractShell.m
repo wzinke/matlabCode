@@ -2,8 +2,8 @@ function success = tdtExtractShell(fileName)
 
 success = 0;
 reSort = 0;
-dataDir='~/DATA/dataProcessed';
-putDir = [[tebaMount,'Users/Kaleb/proAntiProcessed/',fileName];
+dataDir= [mlRoot,'DATA/dataProcessed'];
+putDir = [tebaMount,'Users/Kaleb/proAntiProcessed/',fileName];
 
 % try
     if reSort || length(dir([dataDir,filesep,fileName,'*'])) < 2
@@ -17,7 +17,7 @@ putDir = [[tebaMount,'Users/Kaleb/proAntiProcessed/',fileName];
         clearvars -except iz z sortFolds reSort success dataDir fileName putDir
         if (isempty(dir([sortFolds(iz).folder,filesep,sortFolds(iz).name,'/chan*.mat'])) && isempty(dir([putDir,filesep,'/Chan*']))) || reSort
             rez = load(sprintf('/home/loweka/DATA/dataProcessed/%s/rez.mat',sortFolds(iz).name));
-            klRezToSpks(rez,'-r',[tebaMount,'Users/Kaleb/proAntiRaw');
+            klRezToSpks(rez,'-r',[tebaMount,'Users/Kaleb/proAntiRaw']);
         end
     end
     

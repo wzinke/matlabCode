@@ -32,7 +32,7 @@ end
 
 % Set some constants
 monks = {'Fechner','Zorro'};
-tebaBase = [tebaMount,'data';
+tebaBase = [tebaMount,'data'];
 
 % Set defaults
 blWind = -300:-200;

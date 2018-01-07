@@ -4,9 +4,9 @@ function Task = klGetSess(sessName,varargin)
 print = 0;
 nPrint = 500;
 fresh = 0;
-% rawDir = [tebaMount,'data/Kaleb/antiSessions/';
-rawDir = [tebaMount,'Users/Kaleb/proAntiRaw';
-procDir = [tebaMount,'users/Kaleb/proAntiProcessed/';
+% rawDir = [tebaMount,'data/Kaleb/antiSessions/'];
+rawDir = [tebaMount,'Users/Kaleb/proAntiRaw'];
+procDir = [tebaMount,'users/Kaleb/proAntiProcessed/'];
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));

@@ -10,7 +10,7 @@ switch task
 end
 
 monks = {'Darwin','Euler','Quincy','Seymour'};
-tebaBase = [tebaMount,'data';
+tebaBase = [tebaMount,'data'];
 
 % Set defaults
 blWind = -300:-100;

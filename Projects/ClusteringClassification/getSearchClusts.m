@@ -10,7 +10,7 @@ doReward = 0;
 minN = 10;
 saveLoad = 1;
 
-matLoc = '~/Dropbox/Schall-Lab/dataMats/search';
+matLoc = [mlRoot,'Dropbox/Schall-Lab/dataMats/search'];
 
 if reload
     [searchSDF,searchTimes,searchAreas,searchRecSys, searchRow, searchMonks, searchOtherTasks, searchSess, searchChans] = klPullAllSDFs('search','-a',areaCrit,'-r',doReward,'rec',recCrit,'-c',doClip);

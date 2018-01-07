@@ -3,7 +3,7 @@ function [outSDF,outTimes,outTypes,outRTs] = klPullProAnti()
 xlFile = 'proAntiBookKeeping2.xlsx';
 headRow = 1;
 
-tebaBase = [tebaMount,'Users/Kaleb/proAntiProcessed';
+tebaBase = [tebaMount,'Users/Kaleb/proAntiProcessed'];
 
 % set criteria
 snrCrit = 1;

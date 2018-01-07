@@ -10,7 +10,7 @@ switch task
 end
 
 monks = {'Fechner','Zorro'};
-tebaBase = [tebaMount,'data';
+tebaBase = [tebaMount,'data'];
 
 % Set defaults
 blWind = -300:-100;

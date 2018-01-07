@@ -13,7 +13,7 @@ elseif size(params,1) == 1
     reverse = 1;
 end
 
-% load([tebaMount,'Users/Kaleb/proAntiProcessed/Darwin-170830-141157/Behav.mat');
+% load([tebaMount,'Users/Kaleb/proAntiProcessed/Darwin-170830-141157/Behav.mat']);
 
 stimHs = [.5 1 2];
 stimVs = [2 1 .5];

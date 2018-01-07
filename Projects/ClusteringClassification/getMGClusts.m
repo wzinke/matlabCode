@@ -11,7 +11,7 @@ doReward = 0;
 saveLoad = 1;
 doClip = 1;
 
-matLoc = '~/Dropbox/Schall-Lab/dataMats/memGuide';
+matLoc = [mlRoot,'Dropbox/Schall-Lab/dataMats/memGuide'];
 
 if reload
     [mgSDF,mgTimes,mgAreas,mgRecSys,mgRows,mgMonks,mgOtherTasks,mgSess,mgChans,mgParams] = klPullAllSDFs('mg','-r',doReward,'rec',recCrit,'-a',areaCrit,'-c',doClip);
