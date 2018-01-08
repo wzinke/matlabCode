@@ -11,6 +11,7 @@ searchWind = {[-50,200],[-150,100]};
 doReward = 0;
 minN = 10;
 pAlph = .05;
+pTrend = .1;
 saveLoad = 1;
 doClip = 1;
 matLoc = [mlRoot,'Dropbox/Schall-Lab/dataMats'];
@@ -136,49 +137,56 @@ mgLVR = [mgParams.LVR]';
 mgFano = [mgParams.Fano]';
 spkWidths = [mgParams.spkWidth]';
 
+% Cut out silly values for fitting
+mgTuneWidth(abs(mgTuneWidth) >= 180) = nan;
+mgTuneAmp(abs(mgTuneAmp) >= 1000) = nan;
+
+
 anovaVars = {'mgTuneWidth','mgTuneWidth','mgTuneDir','mgTuneDir','mgTuneAmp','mgTuneAmp',...
     'mgBaseline','mgCV','mgCV2','mgLV','mgLVR','mgFano','spkWidths'};
 varSubset = {'mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5',...
-    'ones(length(mgBaseline),1)','ones(length(mgCV),1)','ones(length(mgCV2),1)','ones(length(mgLV),1)','ones(length(mgLVR),1)','ones(length(mgFano),1)','ones(length(spkWidths),1)'};
+    'true(length(mgBaseline),1)','true(length(mgCV),1)','true(length(mgCV2),1)','true(length(mgLV),1)','true(length(mgLVR),1)','true(length(mgFano),1)','true(length(spkWidths),1)'};
 varCol = {',1',',2',',1',',2',',1',',2',[],[],[],[],[],[],[],[]};
 clustSubset = {'mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5','mgVFitR2 >= .5','mgMFitR2 >= .5',...
-    'ones(length(mgBaseline),1)','ones(length(mgCV),1)','ones(length(mgCV2),1)','ones(length(mgLV),1)','ones(length(mgLVR),1)','ones(length(mgFano),1)','ones(length(spkWidths),1)'};
+    'true(length(mgBaseline),1)','true(length(mgCV),1)','true(length(mgCV2),1)','true(length(mgLV),1)','true(length(mgLVR),1)','true(length(mgFano),1)','true(length(spkWidths),1)'};
 anovaYStr = {'Visual Tuning Width (deg.)','Movement Tuning Width (deg.)','Visual RF (deg.)','Movement Field (deg).','Visual Max (sp/s)','Movement Max (sp/s)',...
     'Baseline FR (sp/s)','CV','CV2','LV','LVR','Fano Factor','Spike Width'};
-anovaSaveStr = {'vTuneWd','mTuneWd','vTuneDir','mTuneDir','vRF','mRF','vMax','mMax','blRate','CV','CV2','LV','LVR','Fano','spkWidth'};
+anovaSaveStr = {'vTuneWd','mTuneWd','vRF','mRF','vMax','mMax','blRate','CV','CV2','LV','LVR','Fano','spkWidth'};
 
 for iv = 1:length(anovaVars)
 %     eval(['[p(iv),t{iv},stats(iv)] = anovan(',anovaVars{iv},',mgIDs(',anovaSubset{iv},',mgK),''display'',''off'');']);
     eval(['[p(iv),t{iv},stats(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},varCol{iv},')',',mgIDs(',clustSubset{iv},',mgK),''off'');']);    
 end
 
-sigComps = find(p < pAlph);
-% for ip = 1:length(sigComps)
-%     % Make the scatter plot
-%     
-%     figure(); %hold on;
-%     eval(['scatter(mgIDs(',anovaSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},',[],''k'');']);
-%     hold on;
-%     % Find the post-hoc comparisons
-%     mcMat = multcompare(stats(sigComps(ip)),'display','off');
-%     postHocSig = find(mcMat(:,end) <= pAlph);
-%     if ~isempty(postHocSig)
-%         % Get default Y axis values
-%         currY = get(gca,'YLim');
-%         % Let's let the post-hoc indicators span 10% at the top
-%         for ii = 1:length(postHocSig)
-%             plot([mcMat(postHocSig(ii),1),mcMat(postHocSig(ii),2)],ones(1,2).*currY(2)+((.1.*ii*range(currY))/length(postHocSig)),'color','k');
-%         end
-%         set(gca,'YLim',[currY(1),currY(2)+.12*range(currY)]);
-%     end
-%     set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','XLim',[0,mgK+1]);
-%     xlabel('MG Cluster');
-%     ylabel(anovaYStr{sigComps(ip)});
-%     saveas(gcf,[saveDir,'/stats/aov-',anovaSaveStr{sigComps(ip)},'.fig']);
-%     clear mcMat
-% end
+sigComps = find(p < pTrend);
+for ip = 1:length(sigComps)
+    % Make the scatter plot
+    
+    figure(); %hold on;
+    eval(['scatter(mgIDs(',clustSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},'(',varSubset{sigComps(ip)},varCol{sigComps(ip)},')',',[],''k'');']);
+    hold on;
+    % Find the post-hoc comparisons
+    mcMat = multcompare(stats(sigComps(ip)),'display','off');
+    postHocSig = find(mcMat(:,end) <= pTrend);
+    if ~isempty(postHocSig)
+        % Get default Y axis values
+        currY = get(gca,'YLim');
+        % Let's let the post-hoc indicators span 10% at the top
+        for ii = 1:length(postHocSig)
+            plot([mcMat(postHocSig(ii),1),mcMat(postHocSig(ii),2)],ones(1,2).*currY(2)+((.1.*ii*range(currY))/length(postHocSig)),'color','k');
+        end
+        set(gca,'YLim',[currY(1),currY(2)+.12*range(currY)]);
+    end
+    set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','XLim',[0,mgK+1]);
+    xlabel('MG Cluster');
+    ylabel(anovaYStr{sigComps(ip)});
+    title(sprintf('Omnibus %s - p=%.3f',anovaSaveStr{sigComps(ip)},p(sigComps(ip))));
+    saveas(gcf,[saveDir,'/stats/aov-',anovaSaveStr{sigComps(ip)},'.fig']);
+    clear mcMat postHocSig
+end
 
-clear p t stats
+clear p t stats sigComps
+% close all;
 
 % Now do some specific comparisons
 vmClusts = [1,4,9,10];
@@ -187,15 +195,33 @@ vClusts = [2,5];
 clustsToCheck = {[1,4,9,10],[3,6],[2,5]};
 clustAbbr = {'VM','M','V'};
 for is = 1:length(clustsToCheck)
+    clear sigComps mcMat postHocSig
     theseClusts = clustsToCheck{is};
     for iv = 1:length(anovaVars)
-        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = anovan(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''display'',''off'');']);
-%         eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''off'');']);
+%         eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = anovan(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''display'',''off'');']);
+        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''off'');']);
     end
+    
+    sigComps = find(p(is,:) < pTrend);
+    for ii = 1:length(sigComps)
+        figure();
+        eval(['scatter(mgIDs(ismember(mgIDs(:,mgK),theseClusts),mgK),',anovaVars{sigComps(ii)},'(ismember(mgIDs(:,mgK),theseClusts)',varCol{sigComps(ii)},'),[],''k'');']);
+        hold on;
+        mcMat = multcompare(stats.(clustAbbr{is})(sigComps(ii)),'display','off');
+        postHocSig = find(mcMat(:,end) <= pTrend);
+        currY = get(gca,'YLim');
+        for iii = 1:length(postHocSig)
+            plot([theseClusts(mcMat(postHocSig(iii),1)),theseClusts(mcMat(postHocSig(iii),2))],ones(1,2).*currY(2)+((.1.*iii*range(currY))/length(postHocSig)),'color','k');
+        end
+        set(gca,'YLim',[currY(1),currY(2)+.12*range(currY)]);
+        set(gca,'tickdir','out','ticklength',get(gca,'ticklength').*3,'box','off','XLim',[min(theseClusts)-.5,max(theseClusts)+.5]);
+        xlabel('MG Cluster');
+        ylabel(anovaYStr{sigComps(ii)});
+        title(sprintf('%s %s - p=%.3f',clustAbbr{is},anovaSaveStr{sigComps(ii)},p(is,sigComps(ii))));
+        saveas(gcf,[saveDir,'/stats/aov-',clustAbbr{is},'-',anovaSaveStr{sigComps(ii)},'.fig']);
+        clear mcMat postHocSig
+            
+    end
+    
+    
 end
-
-keyboard
-
-
-
-
