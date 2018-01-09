@@ -34,6 +34,8 @@ end
 monks = {'Darwin','Euler','Quincy','Seymour'};
 tebaBase = [tebaMount,'data'];
 
+xlFile = [mlRoot,'/Dropbox/Schall-Lab/dataExcels/',xlFile];
+
 % Set defaults
 blWind = -300:-200;
 vWind = -300:500;

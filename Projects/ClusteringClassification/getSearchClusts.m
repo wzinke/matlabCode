@@ -1,12 +1,12 @@
 clear all; close all;
 
-reload = 0;
+reload = 1;
 reClust = 1;
 doClip = 0;
 areaCrit = {'FEF','F2','SEF','SC'};
 recCrit = {'rich','brad','plex','tdt'};
 blWind = -300:-100;
-doReward = 0;
+doReward = 1;
 minN = 10;
 saveLoad = 1;
 

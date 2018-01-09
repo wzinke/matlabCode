@@ -16,6 +16,7 @@ end
 
 % Set data location
 baseDir = [tebaMount,'Users/Wolf/ephys_db/'];
+xlFile = [mlRoot,'/Dropbox/Schall-Lab/dataExcels/plexBookKeeping',xlFile];
 
 % Set constants
 minRate = 0;

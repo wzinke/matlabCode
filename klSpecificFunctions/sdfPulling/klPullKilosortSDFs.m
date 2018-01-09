@@ -42,7 +42,7 @@ vCheck = 50:150;
 mCheck = -50:0;
 
 % Load in excel file
-[num,text,all]=xlsread('kiloSortBookKeeping.xlsx');
+[~,~,all]=xlsread([mlRoot,'/Dropbox/Schall-Lab/dataExcels/tdtBookKeeping/kiloSortBookKeeping.xlsx']);
 
 % Pick out good columns
 snrs = cellfun(@(x) single(x), all(:,3),'UniformOutput',0);

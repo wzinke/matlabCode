@@ -1,26 +1,14 @@
-function [allSDF,allSDFTimes,allAreas,allRows,allMonks,allOtherTasks,allSess,allChans,allParams,allTST] = klPullBradenSEF(task,varargin)
-
-switch task
-    case {'MG','mg'}
-        xlFile = 'klBradenSEFBookKeeping_mg.xlsx';
-        sessHead = 'MG';
-        headRow = 4;
-    case {'search','Search','Capture','capture','cap'}
-        xlFile = 'klBradenSEFBookKeeping_search.xlsx';
-        sessHead = 'SEARCH';
-        headRow = 4;
-end
+function [allSDF,allSDFTimes,allAreas,allRows,allMonks,allOtherTasks,allSess,allChans,allParams] = klPullRichSDFs(task,varargin)
 
 % Set criteria
 minRate = 5;
 isiCrit = inf;
-% snrCrit = .85;
 areaCrit = {'FEF','SEF','SC'};
 clip = 0;
 
 varStrInd = find(cellfun(@ischar,varargin));
-for iv = 1:length(varStrInd)
-    switch varargin{varStrInd(iv)}
+for iv = 1:length(varStrInd),
+    switch varargin{varStrInd(iv)},
         case {'-a','area'}
             areaCrit = varargin{varStrInd(iv)+1};
         case {'-r','reward'}
@@ -30,20 +18,32 @@ for iv = 1:length(varStrInd)
     end
 end
 
+switch task
+    case {'MG','mg'}
+        xlFile = 'klRichBookKeeping_mg.xlsx';
+        sessHead = 'MG';
+        headRow = 4;
+    case {'search','Search','Capture','capture','cap'}
+        xlFile = 'klRichBookKeeping_search.xlsx';
+        sessHead = 'SEARCH';
+        headRow = 4;
+end
+
+
 % Set some constants
-monks = {'Fechner','Zorro'};
+monks = {'Darwin','Euler','Quincy','Seymour'};
 tebaBase = [tebaMount,'data'];
 
-xlFile = [mlRoot,'Dropbox/Schall-Lab/dataExcels/',xlFile];
+
 
 % Set defaults
 blWind = -300:-200;
-vCheck = 50:150;
-mCheck = -50:0;
-rCheck = -50:50;
 vWind = -300:500;
 mWind = -500:300;
 rWind = -200:200;
+vCheck = 50:150;
+mCheck = -50:0;
+rCheck = -50:50;
 
 if doReward
     nAligns = 3;
@@ -56,13 +56,12 @@ allSDFTimes = {};
 allAreas = {};
 allRows = [];
 allMonks = {};
-allTST = [];
 allOtherTasks = {};
 allSess = {};
 allChans = {};
 % Start monk loop
 for im = 1:length(monks)
-    fprintf('Pulling Braden data from monkey %s...\n',monks{im});
+    fprintf('Pulling Rich data from monkey %s...\n',monks{im});
     
     [num,text,all] = xlsread(xlFile,monks{im});
     
@@ -70,16 +69,16 @@ for im = 1:length(monks)
     mnRateCol = find(cellfun(@(x) strcmpi(x,'mnRate'),all(headRow,:)),1);
     isiCol = find(cellfun(@(x) strcmpi(x,' < 3ms'),all(headRow,:)),1);
     areaCol = find(cellfun(@(x) strcmpi(x,'Area'),all(headRow,:)),1);
+    folderCol = find(cellfun(@(x) strcmpi(x,'Folder'),all(headRow,:)),1);
     sessCol = find(cellfun(@(x) strcmpi(x,'Session'),all(headRow,:)),1);
     channelCol = find(cellfun(@(x) strcmpi(x,'Channel'),all(headRow,:)),1);
     unitCol = find(cellfun(@(x) strcmpi(x,'Unit'),all(headRow,:)),1);
-%     snrCol = find(cellfun(@(x) strcmpi(x,'SNR'),all(headRow,:)),1);
+    
     
     % Use criteria to pick out good rows
     mnRates = cellfun(@(x) single(x),all((headRow+1):end,mnRateCol),'UniformOutput',0); [mnRates{cellfun(@isempty,mnRates)}] = deal(nan);
     isis = cellfun(@(x) single(x),all((headRow+1):end,isiCol),'UniformOutput',0); [isis{cellfun(@isempty,isis)}] = deal(nan);
-%     snrs = cellfun(@(x) single(x),all((headRow+1):end,snrCol),'UniformOutput',0); [snrs{cellfun(@isempty,snrs)}] = deal(nan);
-    goodRows = cellfun(@(x) x > minRate,mnRates) & cellfun(@(x) x.*100 < isiCrit,isis) & ismember(all((headRow+1):end,areaCol),areaCrit);% & cellfun(@(x) x >= snrCrit,snrs);
+    goodRows = cellfun(@(x) x > minRate,mnRates) & cellfun(@(x) x < isiCrit,isis) & ismember(all((headRow+1):end,areaCol),areaCrit);
     
     rowInds = find(goodRows)+headRow;
     
@@ -87,14 +86,11 @@ for im = 1:length(monks)
     monkSDFTimes = cell(length(rowInds),nAligns);
     monkAreas = all(rowInds,areaCol);
     monkMonks = cell(length(rowInds),1); [monkMonks{1:length(rowInds)}] = deal(monks{im});
-    monkTST = nan(length(rowInds),1);
     monkOtherTasks = cell(length(rowInds),1);
     monkSess = all(rowInds,sessCol);
     monkChans = cellfun(@(x,y) [num2str(x),num2abc(y)],all(rowInds,channelCol),all(rowInds,unitCol),'UniformOutput',0);
     [monkParams(1:length(rowInds))] = deal(struct('theta',[],'sigma',[],'alpha',[],'offset',[],'blRate',[],'Fano',[],'CV',[],'CV2',[],'LV',[],'LVR',[],'vGOF',[],'mGOF',[],'spkWidth',[]));
-    
     % Start row loop
-%     for ir = length(rowInds):-1:1
     for ir = 1:length(rowInds)
         myRow = rowInds(ir);
         printHead = sprintf('Analyzing row %d (%d of %d):  ',myRow,ir,length(rowInds));
@@ -104,19 +100,20 @@ for im = 1:length(monks)
         printStr = 'Loading data...';
         fprintf(printStr);
         
-        if (ir > 1) && strcmpi(all{rowInds(ir-1),sessCol},all{rowInds(ir),sessCol})
-%         if (ir < length(rowInds)) && strcmpi(all{rowInds(ir+1),sessCol},all{rowInds(ir),sessCol})
+        if (ir > 1) && strcmpi(all{rowInds(ir-1),folderCol},all{rowInds(ir),folderCol}) && strcmpi(all{rowInds(ir-1),sessCol},all{rowInds(ir),sessCol})
         else
-            load([tebaBase,filesep,monks{im},filesep,'SEF Popout/Matlab/Final sorts',filesep,all{rowInds(ir),sessCol}]);
+            clear chanStr dspStr mySpikes vrf mrf spikeMat mMat rMat Target_ SRT BellOn_
+            load([tebaBase,filesep,monks{im},filesep,all{myRow,folderCol},'/Matlab/',all{myRow,sessCol}]);
         end
-        allUnitFiles = dir([tebaBase,filesep,monks{im},filesep,'SEF Popout/Matlab/Final sorts',filesep,strrep(all{rowInds(ir),sessCol},'MG','*')]);
+        allUnitFiles = dir([tebaBase,filesep,monks{im},filesep,'SEF Popout/Matlab/Final sorts',filesep,strrep(all{myRow,sessCol},'MG','*')]);
         allTasks = cellfun(@(x) x((strfind(x,'_')+1):(strfind(x,'.')-1)),{allUnitFiles.name},'UniformOutput',0);
         monkOtherTasks{ir} = allTasks(~ismember(allTasks,sessHead));
+        
+        Target_(Target_(:,2).*45 > 360,2) = nan;
+        
         fprintf(repmat('\b',1,length(printStr)));
         printStr = 'Calculating SDFs...';
         fprintf(printStr);
-        
-        Target_(Target_(:,2).*45 > 360,2) = nan;
         
         chanStr = num2str(all{myRow,channelCol}); while length(chanStr) < 2, chanStr = ['0',chanStr]; end
         dspStr = ['DSP',chanStr,num2abc(all{myRow,unitCol})];
@@ -127,10 +124,15 @@ for im = 1:length(monks)
         badV = 0; badM = 0; badR = 0;
         spikeMat = mySpikes-repmat(Target_(:,1),1,size(mySpikes,2));
         mMat = spikeMat-repmat(SRT(:,1),1,size(spikeMat,2));
-%         rMat = spikeMat-repmat(Reward_(:,3),1,size(spikeMat,2));
-        rMat = spikeMat-repmat(SRT(:,1)+500,1,size(spikeMat,2));
         if clip
             spikeMat(spikeMat >= repmat(SRT(:,1),1,size(spikeMat,2))) = nan;
+        end
+%         rMat = spikeMat-repmat(JuiceOn_,1,size(spikeMat,2));
+        if exist('BellOn_','var')
+            rMat = spikeMat-repmat(BellOn_,1,size(spikeMat,2));
+        else
+            rMat = nan;
+            badR = 1;
         end
         if sum(isfinite(spikeMat(:))) < 5
             vSDF = 0; vTimes = 0; badV = 1;
@@ -148,7 +150,11 @@ for im = 1:length(monks)
             [rSDF,rTimes] = klSpkRatev2(rMat,'-q',1);
         end
         
-        % Get RFs 
+        % Get RFs (and trust Rich)
+        vrf = RFs.(dspStr);
+        mrf = MFs.(dspStr);
+        
+        % Get RFs if necessary
         uLocs = nunique(Target_(:,2));
         vResp = nan(1,length(uLocs));
         mResp = nan(1,length(uLocs));
@@ -156,11 +162,15 @@ for im = 1:length(monks)
         for il = 1:length(uLocs)
             vResp(il) = nanmean(nanmean(vSDF(Correct_(:,2)==1 & Target_(:,2)==uLocs(il),ismember(vTimes,vCheck)),1));
             mResp(il) = nanmean(nanmean(mSDF(Correct_(:,2)==1 & Target_(:,2)==uLocs(il),ismember(mTimes,mCheck)),1));
-            rResp(il) = nanmean(nanmean(rSDF(Correct_(:,2)==1 & Target_(:,2)==uLocs(il),ismember(rTimes,rCheck)),1));
+            if ~isnan(rMat) rResp(il) = nanmean(nanmean(rSDF(Correct_(:,2)==1 & Target_(:,2)==uLocs(il),ismember(rTimes,rCheck)),1)); end
         end
-        if ~any(~isnan(vResp)), vrf = nan; else vrf=uLocs(vResp==max(vResp)); end; if isnan(vrf) || isempty(vrf), badV = 1; end
-        if ~any(~isnan(mResp)), mrf = nan; else mrf=uLocs(mResp==max(mResp)); end; if isnan(mrf) || isempty(mrf), badM = 1; end
-        if ~any(~isnan(rResp)), rrf = nan; else rrf=uLocs(rResp==max(rResp)); end; if isnan(rrf) || isempty(rrf), badR = 1; end
+        if isempty(vrf)
+            if ~any(~isnan(vResp)), vrf = nan; else vrf=uLocs(vResp==max(vResp)); end; if any(isnan(vrf)) || any(isempty(vrf)), badV = 1; end
+        end
+        if isempty(mrf)
+            if ~any(~isnan(mResp)), mrf = nan; else mrf=uLocs(mResp==max(mResp)); end; if any(isnan(mrf)) || any(isempty(mrf)), badM = 1; end
+        end
+        if ~any(~isnan(rResp)), rrf = nan; else rrf=uLocs(rResp==max(rResp)); end; if any(isnan(rrf)) || any(isempty(rrf)), badR = 1; end
         
         % Get spike params
         clear vFit mFit
@@ -208,20 +218,14 @@ for im = 1:length(monks)
 %                 end
                 if doReward
                     if ~badR
-                        monkSDF{ir,3} = nanmean(rSDF(ismember(Target_(:,2),rrf) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
-                        if sum(isnan(monkSDF{ir,3}))==length(monkSDF{ir,3})
-                            keyboard
-                        end
+                        monkSDF{ir,3} = nanmean(rSDF(ismember(Target_(:,2),[mrf,vrf]) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
                         monkSDFTimes{ir,3} = rTimes(ismember(rTimes,rWind));
                     else
                         monkSDF{ir,3} = nan(1,length(rWind));
                         monkSDFTimes{ir,3} = rWind;
                     end
-                    if isempty(monkSDFTimes{ir,3})
-                        keyboard
-                    end
                 end
-                    
+                
                 % Clip post-mov spikes from vis to get monkSDF{1}
                 clipSpikes = spikeMat;
                 clipSpikes(spikeMat > repmat(SRT(:,1),1,size(spikeMat,2))) = nan;
@@ -251,38 +255,6 @@ for im = 1:length(monks)
                     monkSDFTimes{ir,2} = mWind;
                 end
                 if ~badV
-                    % Do running Kruskal-Wallis
-                    nWinds = 1;
-                    clear p centerWind
-                    myWind = -200:-180;
-                    centerWind(nWinds) = nanmean(myWind);
-                    
-                    while sum(ismember(myWind,vTimes))==length(myWind)
-                        in1 = nanmean(vSDF(ismember(Target_(:,2),vrf) & Correct_(:,2)==1,ismember(vTimes,myWind)),2);
-                        in2 = nanmean(vSDF(~ismember(Target_(:,2),vrf) & Correct_(:,2)==1,ismember(vTimes,myWind)),2);
-%                         myNans = isnan(in1) | isnan(in2)
-                        if sum(isnan(in1))==length(in1) || sum(isnan(in2))==length(in2)
-                            p(nWinds) = nan;
-                        else
-                            [p(nWinds)] = ranksum(in1,in2);
-                        end
-                        myWind = myWind+10;
-                        nWinds = nWinds+1;
-                        centerWind(nWinds)=nanmean(myWind);
-                    end
-                    nWinds = nWinds-1;
-                    centerWind = centerWind(1:(end-1));
-                    if any(klGetConsecutive(p < .05) >= 5)
-                        tmp = find(klGetConsecutive(p < .05) >= 5 & centerWind >= 50 & centerWind <= (nanmean(SRT(:,1))-50),1);
-                        if ~isempty(tmp)
-                            monkTST(ir) = tmp;
-                        else
-                            monkTST(ir) = nan;
-                        end
-                    else
-                        monkTST(ir) = nan;
-                    end
-                        
                     monkSDF{ir,1} = nan(2,length(vWind));
                     monkSDF{ir,1}(1,1:sum(ismember(vTimes,vWind))) = nanmean(vSDF(ismember(Target_(:,2),vrf) & Correct_(:,2)==1,ismember(vTimes,vWind)),1);
                     %monkSDF{ir,1}(2,:) = nan(1,length(vWind));
@@ -295,15 +267,15 @@ for im = 1:length(monks)
                 end
                 if doReward
                     if ~badR
-%                         monkSDF{ir,3}(1,:) = nanmean(rSDF(ismember(Target_(:,2),rrf) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
+%                         monkSDF{ir,3}(1,:) = nanmean(rSDF(ismember(Target_(:,2),[mrf,vrf]) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
 %                         monkSDF{ir,3}(2,:) = nan(1,length(rWind));
-%                         monkSDF{ir,3}(3,:) = nanmean(rSDF(~ismember(Target_(:,2),rrf) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
-%                         monkSDF{ir,3}(4,:) = nanmean(rSDF(~ismember(Target_(:,2),rrf) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
+%                         monkSDF{ir,3}(3,:) = nanmean(rSDF(~ismember(Target_(:,2),[mrf,vrf]) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
+%                         monkSDF{ir,3}(4,:) = nanmean(rSDF(~ismember(Target_(:,2),[mrf,vrf]) & Correct_(:,2)==1,ismember(rTimes,rWind)),1);
                         monkSDF{ir,3}(1,:) = nanmean(rSDF(Correct_(:,2)==1,ismember(rTimes,rWind)),1);
                         monkSDF{ir,3}(2,:) = nanmean(rSDF(Errors_(:,5)==1,ismember(rTimes,rWind)),1);
                         monkSDFTimes{ir,3} = rTimes(ismember(rTimes,rWind));
                     else
-                        monkSDF{ir,3} = nan(4,length(rWind));
+                        monkSDF{ir,3} = nan(2,length(rWind));
                         monkSDFTimes{ir,3} = rWind;
                     end
                 end
@@ -315,7 +287,6 @@ for im = 1:length(monks)
     allAreas = cat(1,allAreas,monkAreas);
     allMonks = cat(1,allMonks,monkMonks);
     allRows = cat(1,allRows,rowInds);
-    allTST = cat(1,allTST,monkTST);
     allOtherTasks = cat(1,allOtherTasks,monkOtherTasks);
     allSess = cat(1,allSess,monkSess);
     allChans = cat(1,allChans,monkChans);
@@ -325,9 +296,8 @@ for im = 1:length(monks)
         allParams((1:length(monkParams))+length(allParams)) = monkParams;
     end
 end 
-
+       
 end
-
 
 function gFit = fitGauss(Target_,Correct_,sdf,times,wind)
 
@@ -363,7 +333,6 @@ gFit.sig = f.c1;
 gFit.bl = blSub;
 gFit.gof = gof;
 end
-        
         
         
         
