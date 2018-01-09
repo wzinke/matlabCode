@@ -16,7 +16,7 @@ end
 
 % Set data location
 baseDir = [tebaMount,'Users/Wolf/ephys_db/'];
-xlFile = [mlRoot,'/Dropbox/Schall-Lab/dataExcels/plexBookKeeping',xlFile];
+xlFile = [mlRoot,'/Dropbox/Schall-Lab/dataExcels/plexBookKeeping/',xlFile];
 
 % Set constants
 minRate = 0;
@@ -193,7 +193,7 @@ for im = 1:length(monks)
         end
         rMat = spikeMat-repmat(Task.Reward,1,size(spikeMat,2));
         if sum(isfinite(rMat(:))) < 5
-            rSDF = 0; rTimes = 0; badM = 1;
+            rSDF = 0; rTimes = 0; badR = 1;
         else
             [rSDF,rTimes] = klSpkRatev2(rMat,'-q',1,'-k',kType,'-w',gWidth);
         end
