@@ -8,13 +8,13 @@ visualize = 0;
 
 % Decode varargin
 varStrInd = find(cellfun(@ischar,varargin));
-for iv = 1:length(varStrInd),
-    switch varargin{varStrInd(iv)},
-        case {'-o'},
+for iv = 1:length(varStrInd)
+    switch varargin{varStrInd(iv)}
+        case {'-o'}
             offset = varargin{varStrInd(iv)+1};
-        case {'-r'},
+        case {'-r'}
             res = varargin{varStrInd(iv)+1};
-        case {'-t','-n'},
+        case {'-t','-n'}
             nTrs = varargin{varStrInd(iv)+1};
     end
 end
