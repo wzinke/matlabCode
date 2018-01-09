@@ -118,6 +118,12 @@ keepNames{end+1} = 'clearVars';
 clearVars = currNames(~ismember(currNames,keepNames));
 cellfun(@clear,clearVars);
 
+% Reorder according to paper clusters
+reOrd = [5,2,4,10,8,9,1,3,6,7];
+metaOrder = nan(size(mgIDs));
+for i = 1:10
+    metaOrder(mgIDs(:,mgK)==reOrd(i),mgK) = i;
+end
 
 % Extract mg spiking parameters
 mgTuneWidth = reshape([mgParams.sigma],2,length(mgParams))';
@@ -154,8 +160,8 @@ anovaYStr = {'Visual Tuning Width (deg.)','Movement Tuning Width (deg.)','Visual
 anovaSaveStr = {'vTuneWd','mTuneWd','vRF','mRF','vMax','mMax','blRate','CV','CV2','LV','LVR','Fano','spkWidth'};
 
 for iv = 1:length(anovaVars)
-%     eval(['[p(iv),t{iv},stats(iv)] = anovan(',anovaVars{iv},',mgIDs(',anovaSubset{iv},',mgK),''display'',''off'');']);
-    eval(['[p(iv),t{iv},stats(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},varCol{iv},')',',mgIDs(',clustSubset{iv},',mgK),''off'');']);    
+%     eval(['[p(iv),t{iv},stats(iv)] = anovan(',anovaVars{iv},',metaOrder(',anovaSubset{iv},',mgK),''display'',''off'');']);
+    eval(['[p(iv),t{iv},stats(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},varCol{iv},')',',metaOrder(',clustSubset{iv},',mgK),''off'');']);    
 end
 
 sigComps = find(p < pTrend);
@@ -163,7 +169,7 @@ for ip = 1:length(sigComps)
     % Make the scatter plot
     
     figure(); %hold on;
-    eval(['scatter(mgIDs(',clustSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},'(',varSubset{sigComps(ip)},varCol{sigComps(ip)},')',',[],''k'');']);
+    eval(['scatter(metaOrder(',clustSubset{sigComps(ip)},',mgK),',anovaVars{sigComps(ip)},'(',varSubset{sigComps(ip)},varCol{sigComps(ip)},')',',[],''k'');']);
     hold on;
     % Find the post-hoc comparisons
     mcMat = multcompare(stats(sigComps(ip)),'display','off');
@@ -189,23 +195,24 @@ clear p t stats sigComps
 % close all;
 
 % Now do some specific comparisons
-vmClusts = [1,4,9,10];
-mClusts = [3,6];
-vClusts = [2,5];
-clustsToCheck = {[1,4,9,10],[3,6],[2,5]};
+% vmClusts = [1,4,9,10];
+% mClusts = [3,6];
+% vClusts = [2,5];
+% clustsToCheck = {[1,4,9,10],[3,6],[2,5]};
+clustsToCheck = {[3,4,6,7],[8,9],[1,2]};
 clustAbbr = {'VM','M','V'};
 for is = 1:length(clustsToCheck)
     clear sigComps mcMat postHocSig
     theseClusts = clustsToCheck{is};
     for iv = 1:length(anovaVars)
-%         eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = anovan(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''display'',''off'');']);
-        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts)',varCol{iv},')',',mgIDs(',clustSubset{iv},'& ismember(mgIDs(:,mgK),theseClusts),mgK),''off'');']);
+%         eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = anovan(',anovaVars{iv},'(',varSubset{iv},'& ismember(metaOrder(:,mgK),theseClusts)',varCol{iv},')',',metaOrder(',clustSubset{iv},'& ismember(metaOrder(:,mgK),theseClusts),mgK),''display'',''off'');']);
+        eval(['[p(is,iv),t{is,iv},stats.(clustAbbr{is})(iv)] = kruskalwallis(',anovaVars{iv},'(',varSubset{iv},'& ismember(metaOrder(:,mgK),theseClusts)',varCol{iv},')',',metaOrder(',clustSubset{iv},'& ismember(metaOrder(:,mgK),theseClusts),mgK),''off'');']);
     end
     
     sigComps = find(p(is,:) < pTrend);
     for ii = 1:length(sigComps)
         figure();
-        eval(['scatter(mgIDs(ismember(mgIDs(:,mgK),theseClusts),mgK),',anovaVars{sigComps(ii)},'(ismember(mgIDs(:,mgK),theseClusts)',varCol{sigComps(ii)},'),[],''k'');']);
+        eval(['scatter(metaOrder(ismember(metaOrder(:,mgK),theseClusts),mgK),',anovaVars{sigComps(ii)},'(ismember(metaOrder(:,mgK),theseClusts)',varCol{sigComps(ii)},'),[],''k'');']);
         hold on;
         mcMat = multcompare(stats.(clustAbbr{is})(sigComps(ii)),'display','off');
         postHocSig = find(mcMat(:,end) <= pTrend);
